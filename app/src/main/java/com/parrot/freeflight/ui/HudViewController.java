@@ -588,7 +588,9 @@ public class HudViewController
 		this.btnAVE.setOnClickListener(listener);
 	}
 
-	public void toggleBtnAVEPressed(){
+	//Toggle AVE Button to show it's being pressed.
+	public void toggleBtnAVEPressed()
+	{
 		this.btnAVE.swapImages();
 	}
 
