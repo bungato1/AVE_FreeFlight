@@ -249,6 +249,7 @@ public class ControlDroneActivity
             public void onChanged(JoystickBase joy, float x, float y)
             {
                 if (droneControlService != null && acceleroEnabled == false && running == true) {
+                    Log.i("AMANDA", "onChange roll: " + x + ", pitch: " + (-y));
                     droneControlService.setRoll(x);
                     droneControlService.setPitch(-y);
                 }
@@ -295,6 +296,7 @@ public class ControlDroneActivity
             public void onChanged(JoystickBase joy, float x, float y)
             {
                 if (droneControlService != null) {
+                    Log.i("AMANDA", "onChange yaw: " + x + ", gaz: " + (y));
                     droneControlService.setGaz(y);
                     droneControlService.setYaw(x);
                 }
