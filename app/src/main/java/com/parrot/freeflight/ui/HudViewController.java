@@ -8,6 +8,7 @@
 package com.parrot.freeflight.ui;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.opengl.GLSurfaceView;
@@ -26,6 +27,7 @@ import android.widget.TextView;
 import com.parrot.freeflight.R;
 import com.parrot.freeflight.drone.NavData;
 import com.parrot.freeflight.gestures.EnhancedGestureDetector;
+import com.parrot.freeflight.service.DroneAutonomyAVE;
 import com.parrot.freeflight.ui.hud.Button;
 import com.parrot.freeflight.ui.hud.Image;
 import com.parrot.freeflight.ui.hud.Image.SizeParams;
@@ -100,6 +102,7 @@ public class HudViewController
 	private Text txtRecord;
 	private Text txtUsbRemaining;
 	private Text txtAVE;
+	private boolean enabledAVE;
 	
 	private GLSurfaceView glView;
 	private VideoStageView canvasView;
@@ -194,7 +197,7 @@ public class HudViewController
 		txtAVE.setTextColor(Color.WHITE);
 		txtAVE.setTypeface(TYPEFACE.Helvetica(context));
 		txtAVE.setTextSize(res.getDimensionPixelSize(R.dimen.hud_rec_text_size));
-
+		enabledAVE = false;
 
 		usbIndicator = new Image(res, R.drawable.picto_usb_actif, Align.TOP_RIGHT);
 		usbIndicator.setMargin(0, res.getDimensionPixelOffset(R.dimen.hud_usb_indicator_margin_right), 0, 0);
@@ -591,7 +594,21 @@ public class HudViewController
 	//Toggle AVE Button to show it's being pressed.
 	public void toggleBtnAVEPressed()
 	{
+		enabledAVE = !enabledAVE;
 		this.btnAVE.swapImages();
+		if (enabledAVE) {
+			//TODO: Connect to service, disable joysticks...
+			context.startService(new Intent(context , DroneAutonomyAVE.class));
+			
+		} else {
+			//TODO: Close service, re-enable joysticks...
+			//maybe the joysticks should just call isEnabledAVE before executing their code
+		}
+	}
+
+	public boolean isEnabledAVE()
+	{
+		return enabledAVE;
 	}
 
 	public void setBtnPhotoClickListener(OnClickListener listener)

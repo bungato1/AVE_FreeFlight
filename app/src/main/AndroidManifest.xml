@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.parrot.freeflight"
-    android:installLocation="auto" >
+    android:installLocation="auto">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
@@ -34,7 +34,7 @@
         android:name="android.hardware.wifi"
         android:required="true" />
 
-<application
+    <application
         android:name=".FreeFlightApplication"
         android:allowClearUserData="true"
         android:icon="@drawable/icon"
@@ -49,10 +49,8 @@
             android:label="@string/app_name"
             android:launchMode="singleTask"
             android:noHistory="true"
-            android:screenOrientation="landscape" 
-            android:theme="@style/FreeFlight.SplashScreen"
-            >
-            
+            android:screenOrientation="landscape"
+            android:theme="@style/FreeFlight.SplashScreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -61,9 +59,11 @@
         </activity>
         <activity
             android:name=".activities.ConnectActivity"
+            android:excludeFromRecents="true"
             android:finishOnTaskLaunch="true"
             android:noHistory="true"
-            android:screenOrientation="landscape" android:excludeFromRecents="true" android:stateNotNeeded="true"/>
+            android:screenOrientation="landscape"
+            android:stateNotNeeded="true" />
         <activity
             android:name=".activities.ControlDroneActivity"
             android:configChanges="touchscreen|keyboardHidden|orientation"
@@ -107,13 +107,10 @@
             android:name=".activities.BrowserActivity"
             android:finishOnTaskLaunch="true"
             android:screenOrientation="landscape"
-            android:theme="@style/FreeFlightTheme.BrowserScreen" >
-        </activity>
+            android:theme="@style/FreeFlightTheme.BrowserScreen"></activity>
 
-        <service android:name=".transcodeservice.TranscodingService" >
-        </service>
-        <service android:name=".updater.FirmwareUpdateService" >
-        </service>
+        <service android:name=".transcodeservice.TranscodingService"></service>
+        <service android:name=".updater.FirmwareUpdateService"></service>
 
         <uses-library
             android:name="com.sony.btv.remotesensor"
@@ -121,6 +118,11 @@
         <uses-library
             android:name="com.google.android.tv"
             android:required="false" />
+
+        <service
+            android:name=".service.DroneAutonomyAVE"
+            android:enabled="true"
+            android:exported="true"></service>
     </application>
 
 </manifest>
