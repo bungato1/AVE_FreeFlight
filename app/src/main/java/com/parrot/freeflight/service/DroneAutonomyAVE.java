@@ -26,8 +26,8 @@ public class DroneAutonomyAVE extends Service {
                 Thread.sleep(2000);
                 droneControlService.setYaw(-0.3f);
                 Thread.sleep(2000);
-                droneControlService.setGaz(0.2f);
-                Thread.sleep(2000);
+                droneControlService.setGaz(0.3f);
+                Thread.sleep(2500);
                 droneControlService.triggerTakeOff();
             } catch(Exception e) {
                 e.printStackTrace();
@@ -45,26 +45,8 @@ public class DroneAutonomyAVE extends Service {
         super.onCreate();
         bindService(new Intent(this, DroneControlService.class), mConnection, Context.BIND_AUTO_CREATE);
 
-      /* try {
-           for(int i = 0; i<10;i++){
-               if (droneControlService != null){
-                   break;
-               } else {
-                   wait(100);
-               }
-           }
-          /* Log.i("AMANDA","IM TRYING");
-           droneControlService.triggerTakeOff();
-           droneControlService.setYaw(0.5f);
-           wait(1000);
-           droneControlService.setYaw(0);
-           droneControlService.setGaz(0.5f);
-           wait(1000);
-           droneControlService.setGaz(0);
-           droneControlService.triggerTakeOff();
-       } catch(Exception e) {
-           e.printStackTrace();
-       }*/
+        //Connect to service and do the stuff
+        //TODO: get Jess' service in here and make sure we can connect to raspberry pi still
     }
 
     @Override
