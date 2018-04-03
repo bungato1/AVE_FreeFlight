@@ -17,8 +17,14 @@ public class DroneAutonomyAVE extends Service {
         public void onServiceConnected(ComponentName name, IBinder service)
         {
             Log.i("AMANDA","service connected");
-            droneControlService = ((DroneControlService.LocalBinder) service).getService();
-            try {
+            droneControlService = ((DroneControlService.LocalBinder) service).getService(); //represents the drone
+            //TODO: add Jess' service stuff in here
+            //i.e. communicationsService = ((BTService.myBinder) service).getService();     //represents comms
+
+            //try and catch statements are going to have if statements inside:
+            // if (variable taken from comms = right forward)
+            //    then turn that into droneControlService.'command'
+            try {                                           //inside should be the comms variables that kayla parsed
                 Log.i("AMANDA","I'm trying!!");
                 droneControlService.triggerTakeOff();
                 Thread.sleep(5000);
@@ -32,6 +38,8 @@ public class DroneAutonomyAVE extends Service {
             } catch(Exception e) {
                 e.printStackTrace();
             }
+
+
         }
         public void onServiceDisconnected(ComponentName name)
         {
@@ -45,7 +53,6 @@ public class DroneAutonomyAVE extends Service {
         super.onCreate();
         bindService(new Intent(this, DroneControlService.class), mConnection, Context.BIND_AUTO_CREATE);
 
-        //Connect to service and do the stuff
         //TODO: get Jess' service in here and make sure we can connect to raspberry pi still
     }
 

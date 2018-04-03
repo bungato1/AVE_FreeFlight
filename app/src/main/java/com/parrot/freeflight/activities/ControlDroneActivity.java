@@ -1289,7 +1289,7 @@ public class ControlDroneActivity
 
     private void onAVE()
     {
-        view.toggleBtnAVEPressed();
+        view.toggleBtnAVEPressed();        //picture on HUD being toggled to on
         //Launch Service that does CCP->AVE commands
 
     }
