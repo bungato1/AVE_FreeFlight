@@ -27,8 +27,7 @@ public class DroneAutonomyAVE extends Service {
     DroneControlService droneControlService;
     private IBinder myBinder = new MyBinder();
     public class MyBinder extends Binder {
-        public
-        DroneAutonomyAVE getService() {
+        public DroneAutonomyAVE getService() {
             return DroneAutonomyAVE.this;
         }
     }
@@ -53,7 +52,7 @@ public class DroneAutonomyAVE extends Service {
     private int emptyReceiveCount = 0;
 
     // Constant for UUID
-    static final UUID myUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    static final UUID myUUID = UUID.fromString("94f39d29-7d6d-437d-973b-fba39e49d4ee");
     //final String address = "B8:27:EB:7A:B9:13";
     public final static String EXTRA_ADDRESS = "B8:27:EB:7A:B9:13";
 
@@ -106,14 +105,15 @@ public class DroneAutonomyAVE extends Service {
     public void onCreate() {
         super.onCreate();
         //bindService(new Intent(this, DroneControlService.class), mConnection, Context.BIND_AUTO_CREATE);
-        final String address = "B8:27:EB:7A:B9:13";
-        final BluetoothDevice device = BTAdapter.getRemoteDevice(address);
+    }
+
+    public void startBluetoothThread() {
+        final BluetoothDevice device = BTAdapter.getRemoteDevice(EXTRA_ADDRESS);
         try {
             new ConnectThread(device).start();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        //TODO: get Jess' service in here and make sure we can connect to raspberry pi still
     }
 
     @Override
@@ -149,8 +149,7 @@ public class DroneAutonomyAVE extends Service {
             mmDevice = device;
             try {
                 // This is the UUID that is in the Python Code on the RP3
-                UUID uuid = UUID.fromString("94f39d29-7d6d-437d-973b-fba39e49d4ee");
-                tmp = mmDevice.createRfcommSocketToServiceRecord(uuid);
+                tmp = mmDevice.createRfcommSocketToServiceRecord(myUUID);
             } catch (IOException e) {
                 Log.e(TAG, "Socket's create() method failed", e);
             }
@@ -194,8 +193,8 @@ public class DroneAutonomyAVE extends Service {
                 emptyReceiveCount = 0;
                 while (emptyReceiveCount < 5) {
                     // Sample rate = 250 ms = .25 second
-                    stopwatch = (new Date()).getTime() - startTime;
-                    if (stopwatch == 500) {
+                    stopwatch = System.currentTimeMillis() - startTime;
+                    if (stopwatch >= 500) {
                         // SEND DATA
                         String msg = dataToSend();
                         OutputStream mmOutputStream = mmSocket.getOutputStream();
@@ -255,6 +254,7 @@ public class DroneAutonomyAVE extends Service {
         direction = values[1];
         speed = values[2];
 
+        //TODO: Replace the logging with actual drone movement
         Log.d(TAG, "Received turn: " + turn);
         Log.d(TAG, "Received turn: " + direction);
         Log.d(TAG, "Received turn: " + speed);
@@ -262,6 +262,7 @@ public class DroneAutonomyAVE extends Service {
     }
 
     public String dataToSend() {
+        //TODO: we should be sending gps data instead of how long we have been waiting for an update
         latSample ++;
         lonSample+= 4;
         String st = Long.toString(stopwatch);

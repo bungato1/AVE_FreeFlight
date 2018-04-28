@@ -619,7 +619,7 @@ public class HudViewController
 		this.btnAVE.swapImages();
 
 		if (enabledAVE) {
-			Toast.makeText(context,"Toggled on button(toggleBtnAVEPressed)", Toast.LENGTH_LONG);
+			//Toast.makeText(context,"Toggled on button(toggleBtnAVEPressed)", Toast.LENGTH_LONG);
 			//TODO: Connect to service, disable joysticks...
 			//Intent intent = new Intent(HudViewController.this, DroneAutonomyAVE.class);
 			Intent intent = new Intent(context, DroneAutonomyAVE.class);
@@ -643,6 +643,7 @@ public class HudViewController
 		public void onServiceConnected(ComponentName componentName, IBinder service) {
 			MyBinder myBinder = (MyBinder) service;
 			mDroneAutonomyAVE = myBinder.getService();
+			mDroneAutonomyAVE.startBluetoothThread();
 			mServiceBound = true;
 		}
 
