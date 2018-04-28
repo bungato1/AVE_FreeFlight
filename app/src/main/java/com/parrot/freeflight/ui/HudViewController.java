@@ -8,7 +8,10 @@
 package com.parrot.freeflight.ui;
 
 import android.app.Activity;
+import android.app.Service;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.opengl.GLSurfaceView;
@@ -23,12 +26,22 @@ import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.TextView;
-
+import android.os.IBinder;
+import android.content.Context;
+import android.content.ComponentName;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Set;
+import java.util.UUID;
 import com.parrot.freeflight.R;
 import com.parrot.freeflight.drone.NavData;
 import com.parrot.freeflight.gestures.EnhancedGestureDetector;
 import com.parrot.freeflight.service.DroneAutonomyAVE;
-import com.parrot.freeflight.service.DroneControlService;
 import com.parrot.freeflight.ui.hud.Button;
 import com.parrot.freeflight.ui.hud.Image;
 import com.parrot.freeflight.ui.hud.Image.SizeParams;
@@ -41,8 +54,12 @@ import com.parrot.freeflight.ui.hud.ToggleButton;
 import com.parrot.freeflight.utils.FontUtils.TYPEFACE;
 import com.parrot.freeflight.video.VideoStageRenderer;
 import com.parrot.freeflight.video.VideoStageView;
+import android.os.Binder;
+import android.widget.Toast;
 
-public class HudViewController 
+import com.parrot.freeflight.service.DroneAutonomyAVE.MyBinder;
+
+public class HudViewController
 	implements OnTouchListener,
 			   OnGestureListener
 {
@@ -53,6 +70,9 @@ public class HudViewController
 		COMBINED,
 		MAGNETO
 	}
+
+	DroneAutonomyAVE mDroneAutonomyAVE;
+	boolean mServiceBound = false;
 
 	private static final String TAG = "HudViewController";
 
@@ -597,17 +617,40 @@ public class HudViewController
 	{
 		enabledAVE = !enabledAVE;
 		this.btnAVE.swapImages();
+
 		if (enabledAVE) {
+			Toast.makeText(context,"Toggled on button(toggleBtnAVEPressed)", Toast.LENGTH_LONG);
 			//TODO: Connect to service, disable joysticks...
-			context.startService(new Intent(context , DroneAutonomyAVE.class));
+			//Intent intent = new Intent(HudViewController.this, DroneAutonomyAVE.class);
+			Intent intent = new Intent(context, DroneAutonomyAVE.class);
+			context.bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE);
+			//context.startService(new Intent(context , DroneAutonomyAVE.class));
 			
 		} else {
 			//TODO: Close service, re-enable joysticks...
 			//maybe the joysticks should just call isEnabledAVE before executing their code
-			context.stopService(new Intent(context, DroneAutonomyAVE.class));
-			//TODO: unbind Bluetooth
+			//This line was used for a regular service, not a binding service
+			//context.stopService(new Intent(context, DroneAutonomyAVE.class));
+
+			//Binding service implementation
+			//Toast.makeText(context,"Toggled off button(toggleBtnAVEPressed)", Toast.LENGTH_LONG);
+			context.unbindService(mServiceConnection);
 		}
 	}
+
+	private ServiceConnection mServiceConnection = new ServiceConnection() {
+		@Override
+		public void onServiceConnected(ComponentName componentName, IBinder service) {
+			MyBinder myBinder = (MyBinder) service;
+			mDroneAutonomyAVE = myBinder.getService();
+			mServiceBound = true;
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName componentName) {
+			mServiceBound = false;
+		}
+	};
 
 	public boolean isEnabledAVE()
 	{
