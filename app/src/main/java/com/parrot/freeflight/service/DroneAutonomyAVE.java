@@ -19,7 +19,7 @@ public class DroneAutonomyAVE extends Service {
             Log.i("AMANDA","service connected");
             droneControlService = ((DroneControlService.LocalBinder) service).getService(); //represents the drone
             //TODO: add Jess' service stuff in here
-            //i.e. communicationsService = ((BTService.myBinder) service).getService();     //represents comms
+            //TODO: communicationsService = ((BTService.myBinder) service).getService();     //represents comms
 
             //try and catch statements are going to have if statements inside:
             // if (variable taken from comms = right forward)
@@ -53,7 +53,6 @@ public class DroneAutonomyAVE extends Service {
         super.onCreate();
         bindService(new Intent(this, DroneControlService.class), mConnection, Context.BIND_AUTO_CREATE);
 
-        //TODO: get Jess' service in here and make sure we can connect to raspberry pi still
     }
 
     @Override

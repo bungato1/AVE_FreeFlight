@@ -28,6 +28,7 @@ import com.parrot.freeflight.R;
 import com.parrot.freeflight.drone.NavData;
 import com.parrot.freeflight.gestures.EnhancedGestureDetector;
 import com.parrot.freeflight.service.DroneAutonomyAVE;
+import com.parrot.freeflight.service.DroneControlService;
 import com.parrot.freeflight.ui.hud.Button;
 import com.parrot.freeflight.ui.hud.Image;
 import com.parrot.freeflight.ui.hud.Image.SizeParams;
@@ -603,6 +604,8 @@ public class HudViewController
 		} else {
 			//TODO: Close service, re-enable joysticks...
 			//maybe the joysticks should just call isEnabledAVE before executing their code
+			context.stopService(new Intent(context, DroneAutonomyAVE.class));
+			//TODO: unbind Bluetooth
 		}
 	}
 
