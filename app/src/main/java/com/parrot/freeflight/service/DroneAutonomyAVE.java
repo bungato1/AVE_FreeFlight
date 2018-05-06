@@ -19,9 +19,12 @@ import java.util.UUID;
 import java.util.Timer;
 import java.util.TimerTask;
 import android.os.Handler;
-import android.widget.Toast;
+import android.os.Bundle;
 
-import java.util.Date;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.location.Location;
+
 
 public class DroneAutonomyAVE extends Service {
     DroneControlService droneControlService;
@@ -31,6 +34,8 @@ public class DroneAutonomyAVE extends Service {
             return DroneAutonomyAVE.this;
         }
     }
+
+    public boolean AVEenabled; //for AVE button enabled status
 
     public BluetoothAdapter BTAdapter = BluetoothAdapter.getDefaultAdapter();
     private static final String TAG = "CommsActivity";
@@ -51,28 +56,23 @@ public class DroneAutonomyAVE extends Service {
     private long stopwatch;
     private int emptyReceiveCount = 0;
 
+    //Location Management Variables
+    LocationManager locationManager;
+    double longitudeGPS, latitudeGPS;
+
+
     // Constant for UUID
     static final UUID myUUID = UUID.fromString("94f39d29-7d6d-437d-973b-fba39e49d4ee");
-    //final String address = "B8:27:EB:7A:B9:13";
     public final static String EXTRA_ADDRESS = "B8:27:EB:7A:B9:13";
 
-
-    /*
     private ServiceConnection mConnection = new ServiceConnection() {
-
-        public void onServiceConnected(ComponentName name, IBinder service)
-        {
+        public void onServiceConnected(ComponentName name, IBinder service) {
             Log.i("AMANDA","service connected");
-
             droneControlService = ((DroneControlService.LocalBinder) service).getService(); //represents the drone
-
-            //TODO: add Jess' service stuff in here
-            //i.e. communicationsService = ((BTService.myBinder) service).getService();     //represents comms
-
             //try and catch statements are going to have if statements inside:
             // if (variable taken from comms = right forward)
             //    then turn that into droneControlService.'command'
-/*            try {                                           //inside should be the comms variables that kayla parsed
+            /*try {                        //inside should be the comms variables that kayla parsed
                 Log.i("AMANDA","I'm trying!!");
                 droneControlService.triggerTakeOff();
                 Thread.sleep(5000);
@@ -85,26 +85,23 @@ public class DroneAutonomyAVE extends Service {
                 droneControlService.triggerTakeOff();
             } catch(Exception e) {
                 e.printStackTrace();
-            }
-
-
+            } */
         }
 
         public void onServiceDisconnected(ComponentName name)
         {
             droneControlService = null;
-            try {
+            /*try {
                 mmSocket.close();
             } catch (IOException closeException) {
 
-            }
+            }*/
         }
-    };*/
+    };
 
     @Override
     public void onCreate() {
         super.onCreate();
-        //bindService(new Intent(this, DroneControlService.class), mConnection, Context.BIND_AUTO_CREATE);
     }
 
     public void startBluetoothThread() {
@@ -116,9 +113,24 @@ public class DroneAutonomyAVE extends Service {
         }
     }
 
+    public void setAVEenabled(boolean b) {
+        AVEenabled = b;
+    }
+
     @Override
     public IBinder onBind(Intent intent) {
-        //Toast.makeText(this.getApplicationContext(),"Bound to Service (In onBind)", Toast.LENGTH_LONG);
+        //Create the location manager and try to request updates
+        bindService(new Intent(this, DroneControlService.class), mConnection, Context.BIND_AUTO_CREATE);        locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+        try {
+            locationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER, 500, 0.5f, locationListenerGPS);
+        }
+        catch(SecurityException e){
+        }
+        catch(IllegalArgumentException e){
+        }
+        catch(RuntimeException e){
+        }
         return myBinder;
     }
 
@@ -130,11 +142,12 @@ public class DroneAutonomyAVE extends Service {
     @Override
     public boolean onUnbind(Intent intent) {
         try {
-            mmSocket.close();
-            //Toast.makeText(this.getApplicationContext(),"Unbound to service (In onUnbind)", Toast.LENGTH_LONG);
+            mmSocket.close(); //closes Bluetooth socket
         } catch (IOException closeException) {
 
         }
+        unbindService(mConnection); //unbinds from DroneControlService
+        locationManager.removeUpdates(locationListenerGPS); //stops GPS from updating
         return true;
     }
 
@@ -184,23 +197,19 @@ public class DroneAutonomyAVE extends Service {
         public void receive() throws IOException {
 
             InputStream mmInputStream = mmSocket.getInputStream();
+            OutputStream mmOutputStream = mmSocket.getOutputStream();
             byte[] buffer = new byte[1024];
-            //int bytes = 0;
-
             try {
                 long startTime = System.currentTimeMillis();
-                //long stopwatch;
                 emptyReceiveCount = 0;
-                while (emptyReceiveCount < 5) {
+                while (emptyReceiveCount < 100000 && AVEenabled) {
                     // Sample rate = 250 ms = .25 second
                     stopwatch = System.currentTimeMillis() - startTime;
                     if (stopwatch >= 500) {
                         // SEND DATA
                         String msg = dataToSend();
-                        OutputStream mmOutputStream = mmSocket.getOutputStream();
                         // writes bytes from the specified byte array to this output stream
                         mmOutputStream.write(msg.getBytes());
-
 
                         // RECEIVE DATA
                         // Try to receive message
@@ -259,20 +268,77 @@ public class DroneAutonomyAVE extends Service {
         Log.d(TAG, "Received turn: " + direction);
         Log.d(TAG, "Received turn: " + speed);
 
+        //Yaw is right or left
+        //Gaz is up or down
+        //Pitch is forward or backwards
+
+        if (values[0].equals("Left")) {
+            if (values[1].equals("Forward")) {
+               //TODO: Go forwards left
+
+            } else if (values[1].equals("Reverse")) {
+               //TODO: Go backwards left
+            }
+        } else if (values[0].equals("Right")) {
+            if (values[1].equals("Forward")) {
+               //TODO: Go forwards right
+            } else if (values[1].equals("Reverse")) {
+               //TODO: Go backwards right
+            }
+        } else if (values[0].equals("Straight")) {
+            if (values[1].equals("Forward")) {
+               //TODO: Go forwards straight
+                droneControlService.setPitch(0.5f);
+            } else if (values[1].equals("Reverse")) {
+               //TODO: Go backwards straight
+                droneControlService.setPitch(-0.5f);
+            }
+        } else {
+            //Do nothing; bad data
+        }
+
+
     }
 
     public String dataToSend() {
-        //TODO: we should be sending gps data instead of how long we have been waiting for an update
         latSample ++;
         lonSample+= 4;
         String st = Long.toString(stopwatch);
-        if (emptyReceiveCount == 3) {
+
+        String longitude = Double.toString(longitudeGPS);
+        String latitude = Double.toString(latitudeGPS);
+
+        if (emptyReceiveCount == 1000) {
             String data = st  + " " + "Receive Count is 3";
             return data;
         }
-        String data = st  + " " + Integer.toString(emptyReceiveCount);
+        //String data = st  + " " + Integer.toString(emptyReceiveCount);
+        String data = st + " " + longitude + " " + latitude + " " + Integer.toString(emptyReceiveCount);
         return data;
 
     }
+
+    private final LocationListener locationListenerGPS = new LocationListener() {
+        public void onLocationChanged(Location location) {
+            longitudeGPS = location.getLongitude();
+            latitudeGPS = location.getLatitude();
+        }
+
+        @Override
+        public void onStatusChanged(String s, int i, Bundle bundle){
+            //change AVE status - something went wrong with GPS (maybe)
+        }
+
+        @Override
+        public void onProviderEnabled(String s) {
+
+        }
+
+        @Override
+        public void onProviderDisabled(String s) {
+            //change AVE status to emergency land - not connection to GPS
+        }
+    };
+
 
 }

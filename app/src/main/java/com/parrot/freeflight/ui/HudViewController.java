@@ -616,24 +616,21 @@ public class HudViewController
 	public void toggleBtnAVEPressed()
 	{
 		enabledAVE = !enabledAVE;
+		if ((mServiceBound == true) && mDroneAutonomyAVE != null){
+			mDroneAutonomyAVE.setAVEenabled(enabledAVE);
+		}
 		this.btnAVE.swapImages();
 
 		if (enabledAVE) {
-			//Toast.makeText(context,"Toggled on button(toggleBtnAVEPressed)", Toast.LENGTH_LONG);
 			//TODO: Connect to service, disable joysticks...
 			//Intent intent = new Intent(HudViewController.this, DroneAutonomyAVE.class);
 			Intent intent = new Intent(context, DroneAutonomyAVE.class);
 			context.bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE);
-			//context.startService(new Intent(context , DroneAutonomyAVE.class));
-			
 		} else {
 			//TODO: Close service, re-enable joysticks...
 			//maybe the joysticks should just call isEnabledAVE before executing their code
 			//This line was used for a regular service, not a binding service
-			//context.stopService(new Intent(context, DroneAutonomyAVE.class));
-
 			//Binding service implementation
-			//Toast.makeText(context,"Toggled off button(toggleBtnAVEPressed)", Toast.LENGTH_LONG);
 			context.unbindService(mServiceConnection);
 		}
 	}
@@ -643,8 +640,10 @@ public class HudViewController
 		public void onServiceConnected(ComponentName componentName, IBinder service) {
 			MyBinder myBinder = (MyBinder) service;
 			mDroneAutonomyAVE = myBinder.getService();
+			mDroneAutonomyAVE.setAVEenabled(enabledAVE);
 			mDroneAutonomyAVE.startBluetoothThread();
 			mServiceBound = true;
+
 		}
 
 		@Override
