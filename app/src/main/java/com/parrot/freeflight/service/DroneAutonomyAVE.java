@@ -16,9 +16,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
-import java.util.Timer;
-import java.util.TimerTask;
-import android.os.Handler;
 import android.os.Bundle;
 
 import android.location.LocationListener;
@@ -39,26 +36,36 @@ public class DroneAutonomyAVE extends Service {
 
     public BluetoothAdapter BTAdapter = BluetoothAdapter.getDefaultAdapter();
     private static final String TAG = "CommsActivity";
-    private BluetoothAdapter btAdapter = null;
-    private BluetoothSocket btSocket = null;
-    private OutputStream outStream = null;
-    private InputStream inStream = null;
     BluetoothSocket mmSocket;
     BluetoothDevice mmDevice;
     public String turn;
     public String direction;
     public String speed;
-    private int lonSample = 0;
-    private int latSample = 0;
-    public Timer timer;
-    public TimerTask timerTask;
-    final Handler handler = new Handler();
     private long stopwatch;
     private int emptyReceiveCount = 0;
 
+    // Variables to send to CCP
+    String AVEFlag = "1";
+    String LFFlag = "0";
+    String vehicleName = "AVE1"; // first drone name
+    String systemStatus;
+
+
+    // AVE Flag (0 = PTP, 1 = AVE)
+    // Leader/Follower Flag (0 = follower, 1 = leader)
+    // Vehicle name (AVE1)
+    // system status (0 = System OK, 1 = Emergency Stop Required)
+    // Location: Latitude, Longitude
+    // Line of Bearing
+    // Velocity (XYZ)
+    // Acceleration (XYZ)
+    // Extra Info
+    // 1,0,AVE1,0,100.0000090,100.0050000,0,20,0,0,0,0.2,0
+
     //Location Management Variables
     LocationManager locationManager;
-    double longitudeGPS, latitudeGPS;
+    double longitudeGPS, latitudeGPS, velocityGPS;
+    float bearingGPS;
 
 
     // Constant for UUID
@@ -94,7 +101,6 @@ public class DroneAutonomyAVE extends Service {
             /*try {
                 mmSocket.close();
             } catch (IOException closeException) {
-
             }*/
         }
     };
@@ -123,7 +129,10 @@ public class DroneAutonomyAVE extends Service {
         bindService(new Intent(this, DroneControlService.class), mConnection, Context.BIND_AUTO_CREATE);        locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
         try {
             locationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER, 500, 0.5f, locationListenerGPS);
+
+            LocationManager.GPS_PROVIDER, 500, 0.5f, locationListenerGPS);
+            Log.i("AMANDA","Inside location manager");
+
         }
         catch(SecurityException e){
         }
@@ -161,8 +170,11 @@ public class DroneAutonomyAVE extends Service {
             BluetoothSocket tmp = null;
             mmDevice = device;
             try {
+                Log.i("AMANDA","Inside ConnectThread try before createRFComm");
                 // This is the UUID that is in the Python Code on the RP3
                 tmp = mmDevice.createRfcommSocketToServiceRecord(myUUID);
+                Log.i("AMANDA","Inside ConnectThread try after createRFComm");
+
             } catch (IOException e) {
                 Log.e(TAG, "Socket's create() method failed", e);
             }
@@ -202,7 +214,7 @@ public class DroneAutonomyAVE extends Service {
             try {
                 long startTime = System.currentTimeMillis();
                 emptyReceiveCount = 0;
-                while (emptyReceiveCount < 100000 && AVEenabled) {
+                while (emptyReceiveCount < 100 && AVEenabled) {
                     // Sample rate = 250 ms = .25 second
                     stopwatch = System.currentTimeMillis() - startTime;
                     if (stopwatch >= 500) {
@@ -232,11 +244,8 @@ public class DroneAutonomyAVE extends Service {
                 // NEED TO LAND, WE HAVE NOT GOTTEN MESSAGES IN 1 SEC
 
                 /*String readMessage = "";
-
                 // continue until no byte is available because the stream is at the end of the file
                 while (readMessage != "End") {
-
-
                     int bytes = mmInputStream.read(buffer);
                     readMessage = new String(buffer, 0, bytes);
                     Log.d(TAG, "Receive);d from CCP (Unparsed): " + readMessage);
@@ -271,49 +280,56 @@ public class DroneAutonomyAVE extends Service {
         //Yaw is right or left
         //Gaz is up or down
         //Pitch is forward or backwards
-
+/*
         if (values[0].equals("Left")) {
             if (values[1].equals("Forward")) {
-               //TODO: Go forwards left
+                //TODO: Go forwards left
 
             } else if (values[1].equals("Reverse")) {
-               //TODO: Go backwards left
+                //TODO: Go backwards left
             }
         } else if (values[0].equals("Right")) {
             if (values[1].equals("Forward")) {
-               //TODO: Go forwards right
+                //TODO: Go forwards right
             } else if (values[1].equals("Reverse")) {
-               //TODO: Go backwards right
+                //TODO: Go backwards right
             }
         } else if (values[0].equals("Straight")) {
             if (values[1].equals("Forward")) {
-               //TODO: Go forwards straight
+                //TODO: Go forwards straight
                 droneControlService.setPitch(0.5f);
             } else if (values[1].equals("Reverse")) {
-               //TODO: Go backwards straight
+                //TODO: Go backwards straight
                 droneControlService.setPitch(-0.5f);
             }
         } else {
             //Do nothing; bad data
         }
-
+*/
 
     }
 
     public String dataToSend() {
-        latSample ++;
-        lonSample+= 4;
-        String st = Long.toString(stopwatch);
-
+        // AVE Flag (0 = PTP, 1 = AVE)
+        // Leader/Follower Flag (0 = follower, 1 = leader)
+        // Vehicle name (AVE1)
+        // system status (0 = System OK, 1 = Emergency Stop Required)
+        // Location: Latitude, Longitude
+        // Line of Bearing
+        // Velocity (XYZ)
+        // Acceleration (XYZ)
+        // Extra Info
+        // 1,0,AVE1,0,100.0000090,100.0050000,0,20,0,0,0,0.2,0
+        Log.i("AMANDA","Before getting longitude/other");
         String longitude = Double.toString(longitudeGPS);
         String latitude = Double.toString(latitudeGPS);
+        String bearing = Float.toString(bearingGPS);
+        String speed = Double.toString(velocityGPS);
+        Log.i("AMANDA","After getting longitude/other");
 
-        if (emptyReceiveCount == 1000) {
-            String data = st  + " " + "Receive Count is 3";
-            return data;
-        }
+
         //String data = st  + " " + Integer.toString(emptyReceiveCount);
-        String data = st + " " + longitude + " " + latitude + " " + Integer.toString(emptyReceiveCount);
+        String data =  longitude + "," + latitude + "," + bearing + "," + speed;
         return data;
 
     }
@@ -322,6 +338,9 @@ public class DroneAutonomyAVE extends Service {
         public void onLocationChanged(Location location) {
             longitudeGPS = location.getLongitude();
             latitudeGPS = location.getLatitude();
+            bearingGPS = location.getBearing();
+            velocityGPS = location.getSpeed();
+
         }
 
         @Override
