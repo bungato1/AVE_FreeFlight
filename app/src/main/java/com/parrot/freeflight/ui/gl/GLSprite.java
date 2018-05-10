@@ -395,7 +395,8 @@ public class GLSprite
             } catch (RuntimeException e) {
                 // We catch this exception just because we want to display stack trace into the log
                 // and continue running the app
-                Log.w(TAG, Log.getStackTraceString(e));
+                //This can be ver noisy, and doesn't affect us for the time being
+                //Log.w(TAG, Log.getStackTraceString(e));
             }
         }
     }
