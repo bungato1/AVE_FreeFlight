@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -46,6 +47,8 @@ public class DroneAutonomyAVE extends Service {
     public String speed;
     private long stopwatch;
     private int emptyReceiveCount = 0;
+
+    private static final int TIME_CONSTANT = 10;  //constant for flight time
 
     // Variables to send to CCP
     String AVEFlag = "1";
@@ -221,6 +224,7 @@ public class DroneAutonomyAVE extends Service {
             byte[] buffer = new byte[1024];
                 emptyReceiveCount = 0;
                 while (emptyReceiveCount < 100 && AVEenabled) {
+                    droneControlService.triggerTakeOff();
                     // Sample rate = 250 ms = .25 second
                     // SEND DATA
                     String msg = dataToSend();
@@ -278,6 +282,9 @@ public class DroneAutonomyAVE extends Service {
         direction = values[1];
         speed = values[2];
 
+        Integer intTurn = Integer.valueOf(values[0]);
+        Boolean isNegative = false;
+
         //TODO: Replace the logging with actual drone movement
         Log.d(TAG, "Received turn: " + turn);
         Log.d(TAG, "Received turn: " + direction);
@@ -286,32 +293,22 @@ public class DroneAutonomyAVE extends Service {
         //Yaw is right or left
         //Gaz is up or down
         //Pitch is forward or backwards
-/*
-        if (values[0].equals("Left")) {
-            if (values[1].equals("Forward")) {
-                //TODO: Go forwards left
 
-            } else if (values[1].equals("Reverse")) {
-                //TODO: Go backwards left
-            }
-        } else if (values[0].equals("Right")) {
-            if (values[1].equals("Forward")) {
-                //TODO: Go forwards right
-            } else if (values[1].equals("Reverse")) {
-                //TODO: Go backwards right
-            }
-        } else if (values[0].equals("Straight")) {
-            if (values[1].equals("Forward")) {
-                //TODO: Go forwards straight
-                droneControlService.setPitch(0.5f);
-            } else if (values[1].equals("Reverse")) {
-                //TODO: Go backwards straight
-                droneControlService.setPitch(-0.5f);
-            }
-        } else {
-            //Do nothing; bad data
+
+        if (intTurn > 180) {
+            isNegative = true;
+            intTurn = (intTurn - 360) * (-1);
         }
-*/
+
+        try {
+            droneControlService.setYaw(isNegative ? -1.0f : 1.0f);
+            Thread.sleep(TIME_CONSTANT * intTurn);
+            droneControlService.setPitch(1.0f);
+            Thread.sleep(1000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
     }
 
